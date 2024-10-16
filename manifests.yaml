@@ -13,7 +13,7 @@ spec:
         app: kargo-demo
     spec:
       containers:
-      - image: public.ecr.aws/nginx/nginx:1.27.1
+      - image: public.ecr.aws/nginx/nginx:1.27.2
         name: nginx
         volumeMounts:
         - mountPath: /usr/share/nginx/html
@@ -23,6 +23,39 @@ spec:
       - configMap:
           name: kargo-demo-content
         name: content
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpbin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: httpbin
+        version: v1
+    spec:
+      containers:
+      - command:
+        - pipenv
+        - run
+        - gunicorn
+        - -b
+        - 0.0.0.0:8080
+        - httpbin:app
+        - -k
+        - gevent
+        image: docker.io/kong/httpbin:0.2.0
+        imagePullPolicy: IfNotPresent
+        name: httpbin
+        ports:
+        - containerPort: 8080
+      serviceAccountName: httpbin
 ---
 apiVersion: v1
 kind: Service
